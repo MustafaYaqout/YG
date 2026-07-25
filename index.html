@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق تقارير التحصيل - YG Company</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="file"],
+        select,
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background: white;
+            color: #333;
+        }
+
+        input[type="file"]:focus,
+        select:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-right: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .info-box.show {
+            display: block;
+        }
+
+        .error-box {
+            background: #ffebee;
+            border-right: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 5px;
+            color: #c62828;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-box.show {
+            display: block;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border-right: 4px solid #4CAF50;
+            padding: 15px;
+            border-radius: 5px;
+            color: #2e7d32;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-box.show {
+            display: block;
+        }
+
+        .customer-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+            border-right: 3px solid #667eea;
+        }
+
+        .customer-info.show {
+            display: block;
+        }
+
+        .customer-info p {
+            margin: 8px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .customer-info strong {
+            color: #667eea;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            border-top: 3px solid #667eea;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-card p {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .form-row,
+            .button-group,
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                gap: 15px;
+            }
+        }
+
+        .pdf-preview {
+            max-height: 500px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .pdf-preview.show {
+            display: block;
+        }
+
+        .file-type-indicator {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f4ff;
+            border-radius: 5px;
+            border-right: 3px solid #667eea;
+            display: none;
+        }
+
+        .file-type-indicator.show {
+            display: block;
+        }
+
+        .file-type-indicator p {
+            margin: 0;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 تطبيق تقارير التحصيل</h1>
+            <p>YG Company (Coca-Cola)</p>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+        <div class="success-box" id="successBox"></div>
+        <div class="info-box" id="infoBox"></div>
+
+        <!-- خطوة 1: رفع الملف -->
+        <div class="section">
+            <h2>الخطوة 1: رفع ملف المديونية</h2>
+            <div class="form-group">
+                <label for="excelFile">اختر ملف Excel (.xlsx أو .xls):</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls" />
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">ملاحظة: الملف سيتم معالجته محلياً في جهازك</p>
+            </div>
+            <div class="file-type-indicator" id="fileTypeIndicator">
+                <p>📄 نوع الملف: <span id="fileTypeName"></span></p>
+            </div>
+            <div id="fileStats"></div>
+        </div>
+
+        <!-- خطوة 1ب: رفع ملف المبيعات (اختياري) لعمل كشف حساب كامل -->
+        <div class="section" id="salesSection" style="display: none;">
+            <h2>الخطوة 1 (اختياري): رفع ملف المبيعات</h2>
+            <div class="form-group">
+                <label for="salesFile">اختر ملف المبيعات (.xls أو .xlsx) - لعمل كشف حساب كامل بالفواتير:</label>
+                <input type="file" id="salesFile" accept=".xlsx, .xls" />
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">اختياري: لو رفعته، هيظهر زرار "كشف الحساب الكامل" اللي بيجمع فواتير البيع مع التحصيل</p>
+            </div>
+            <div id="salesFileStats"></div>
+        </div>
+
+        <!-- خطوة 2: اختيار العميل -->
+        <div class="section" id="customerSection" style="display: none;">
+            <h2>الخطوة 2: اختر العميل</h2>
+            
+            <div class="form-group">
+                <label for="searchCustomer">🔍 ابحث برقم SAP أو اسم العميل:</label>
+                <input 
+                    type="text" 
+                    id="searchCustomer" 
+                    placeholder="اكتب رقم SAP أو اسم العميل..." 
+                    style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 14px;"
+                />
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">ابحث في الوقت الفعلي عن أي عميل</p>
+            </div>
+
+            <div class="form-group">
+                <label for="customerSelect">أو اختر من القائمة:</label>
+                <select id="customerSelect">
+                    <option value="">-- اختر عميلاً --</option>
+                </select>
+            </div>
+
+            <div class="customer-info" id="customerInfo">
+                <p><strong>رقم SAP:</strong> <span id="customerSAB"></span></p>
+                <p><strong>اسم العميل:</strong> <span id="customerName"></span></p>
+                <p><strong>Territory/المنطقة:</strong> <span id="customerTerritory" style="color: #4CAF50; font-weight: bold;"></span></p>
+                <p><strong>المحصل:</strong> <span id="customerCollector"></span></p>
+                <p><strong>إجمالي التحصيل:</strong> <span id="customerTotal"></span></p>
+            </div>
+        </div>
+
+        <!-- خطوة 3: اختيار الفترة -->
+        <div class="section" id="periodSection" style="display: none;">
+            <h2>الخطوة 3: اختر الفترة (اختياري)</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">من التاريخ:</label>
+                    <input type="date" id="startDate" />
+                </div>
+                <div class="form-group">
+                    <label for="endDate">إلى التاريخ:</label>
+                    <input type="date" id="endDate" />
+                </div>
+            </div>
+
+            <div class="stats" id="stats"></div>
+        </div>
+
+        <!-- الأزرار: تقرير التحصيل فقط -->
+        <div class="button-group" id="buttonGroup" style="display: none; grid-template-columns: 1fr 1fr;">
+            <button class="btn-primary" id="previewBtn">👁️ عرض تقرير التحصيل</button>
+            <button class="btn-success" id="downloadPdfBtn" style="background: #FF6B35;">📥 تنزيل PDF (تحصيل فقط)</button>
+        </div>
+
+        <!-- الأزرار: كشف الحساب الكامل (فواتير + تحصيل + مديونية) -->
+        <div class="button-group" id="statementButtonGroup" style="display: none; grid-template-columns: 1fr 1fr; margin-top: 10px;">
+            <button class="btn-primary" id="previewStatementBtn">👁️ عرض كشف الحساب الكامل</button>
+            <button class="btn-success" id="downloadStatementBtn" style="background: #6a1b9a;">📥 تنزيل كشف الحساب PDF</button>
+        </div>
+
+        <!-- PDF Preview -->
+        <div class="pdf-preview" id="pdfPreview">
+            <div id="pdfContent"></div>
+        </div>
+    </div>
+
+    <!-- Hidden element for report -->
+    <div id="pdfReport" style="display: none;"></div>
+
+    <script>
+        // شعار الشركة (مضمن كـ base64 عشان الملف يفضل شغال أوفلاين من غير ما يحتاج ملف صورة خارجي)
+        const LOGO_BASE64 = 'data:image/jpeg;base64,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';
+
+        let excelData = null;
+        let salesData = null; // بيانات ملف المبيعات (اختياري) - لكشف الحساب الكامل
+        let selectedCustomer = null;
+        let allCustomers = new Map(); // Store all customer data
+
+        // Event listeners
+        document.getElementById('excelFile').addEventListener('change', handleFileUpload);
+        document.getElementById('salesFile').addEventListener('change', handleSalesFileUpload);
+        document.getElementById('customerSelect').addEventListener('change', handleCustomerChange);
+        document.getElementById('previewBtn').addEventListener('click', previewReport);
+        document.getElementById('downloadPdfBtn').addEventListener('click', downloadPdfReport);
+        document.getElementById('previewStatementBtn').addEventListener('click', previewStatement);
+        document.getElementById('downloadStatementBtn').addEventListener('click', downloadStatementPdf);
+        document.getElementById('startDate').addEventListener('change', updateStats);
+        document.getElementById('endDate').addEventListener('change', updateStats);
+        
+        // Search listener
+        document.getElementById('searchCustomer').addEventListener('input', handleSearchCustomer);
+
+        function showError(message) {
+            const box = document.getElementById('errorBox');
+            box.textContent = message;
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 6000);
+        }
+
+        function showSuccess(message) {
+            const box = document.getElementById('successBox');
+            box.textContent = message;
+            box.classList.add('show');
+            setTimeout(() => box.classList.remove('show'), 5000);
+        }
+
+        function showInfo(message) {
+            const box = document.getElementById('infoBox');
+            box.textContent = message;
+            box.classList.add('show');
+        }
+
+        function hideInfo() {
+            document.getElementById('infoBox').classList.remove('show');
+        }
+
+        async function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                showInfo('⏳ جاري تحليل الملف...');
+                
+                const arrayBuffer = await file.arrayBuffer();
+                
+                // Use SheetJS library from CDN - try multiple CDN sources
+                if (typeof XLSX === 'undefined') {
+                    await loadSheetJS();
+                }
+
+                if (typeof XLSX === 'undefined') {
+                    throw new Error('فشل تحميل مكتبة معالجة Excel. حاول مجدداً أو استخدم متصفح آخر');
+                }
+
+                const workbook = XLSX.read(arrayBuffer, { cellDates: true });
+                
+                // Find the sheet (try multiple names)
+                const possibleSheets = ['اساس التحصيل', 'Collection', 'Data'];
+                let worksheet = null;
+                let sheetName = '';
+
+                for (let name of possibleSheets) {
+                    if (workbook.Sheets[name]) {
+                        worksheet = workbook.Sheets[name];
+                        sheetName = name;
+                        break;
+                    }
+                }
+
+                // If not found, use first sheet
+                if (!worksheet) {
+                    sheetName = workbook.SheetNames[0];
+                    worksheet = workbook.Sheets[sheetName];
+                }
+
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // صف 1 فاضي في هذا الملف، والعناوين الحقيقية (New SAP Code, Territory, التواريخ...) في صف 2
+                // فبنكتشف رقم صف العناوين ورقم أول عمود تاريخ تلقائيًا بدل ما نفترضهم ثابتين
+                const headerRowIndex = findHeaderRowIndex(jsonData);
+                const dateStartIndex = findDateStartIndex(jsonData[headerRowIndex]);
+
+                excelData = {
+                    collections: jsonData,
+                    workbook: workbook,
+                    fileType: 'excel',
+                    fileName: file.name,
+                    headerRowIndex: headerRowIndex,
+                    dateStartIndex: dateStartIndex
+                };
+
+                document.getElementById('fileTypeName').textContent = 'Excel Spreadsheet (' + sheetName + ')';
+                document.getElementById('fileTypeIndicator').classList.add('show');
+
+                processCollectionData();
+                hideInfo();
+                showSuccess('✅ تم تحميل الملف بنجاح!');
+            } catch (error) {
+                showError('❌ خطأ في تحميل الملف: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        async function loadSheetJS() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                script.onload = () => {
+                    setTimeout(() => resolve(), 100);
+                };
+                script.onerror = () => {
+                    // Try alternative CDN
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+                    script2.onload = () => setTimeout(() => resolve(), 100);
+                    script2.onerror = () => reject(new Error('Failed to load XLSX library'));
+                    document.head.appendChild(script2);
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        async function handleSalesFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                showInfo('⏳ جاري تحليل ملف المبيعات...');
+
+                const arrayBuffer = await file.arrayBuffer();
+
+                if (typeof XLSX === 'undefined') {
+                    await loadSheetJS();
+                }
+                if (typeof XLSX === 'undefined') {
+                    throw new Error('فشل تحميل مكتبة معالجة Excel. حاول مجدداً أو استخدم متصفح آخر');
+                }
+
+                const workbook = XLSX.read(arrayBuffer, { cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // بنكتشف صف العناوين تلقائيًا (فيه صف عنوان تقرير قبله أحيانًا في تصدير Crystal Reports)
+                let headerRowIndex = -1;
+                for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
+                    const row = jsonData[i];
+                    if (!row) continue;
+                    if (row.includes('CustomerNo') && row.includes('OrderID')) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+
+                if (headerRowIndex === -1) {
+                    throw new Error('لم يتم التعرف على أعمدة ملف المبيعات (CustomerNo / OrderID). تأكد إنه نفس تصدير التقرير المعتاد.');
+                }
+
+                const headerRow = jsonData[headerRowIndex];
+                const col = {
+                    orderId: headerRow.indexOf('OrderID'),
+                    customerNo: headerRow.indexOf('CustomerNo'),
+                    actualDeliveryDate: headerRow.indexOf('ActualDeliveryDate'),
+                    qty: headerRow.indexOf('QTY'),
+                    lineTotal: headerRow.indexOf('LineTotal')
+                };
+
+                salesData = {
+                    rows: jsonData.slice(headerRowIndex + 1),
+                    col: col,
+                    fileName: file.name
+                };
+
+                document.getElementById('salesFileStats').innerHTML =
+                    `<p style="color:#2e7d32; font-weight:600;">✅ تم تحميل ملف المبيعات (${salesData.rows.length} سطر)</p>`;
+
+                hideInfo();
+                showSuccess('✅ تم تحميل ملف المبيعات بنجاح! زرار "كشف الحساب الكامل" هيشمل الفواتير دلوقتي');
+
+                if (selectedCustomer) {
+                    document.getElementById('statementButtonGroup').style.display = 'grid';
+                }
+            } catch (error) {
+                showError('❌ خطأ في تحميل ملف المبيعات: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        function processCollectionData() {
+            const data = excelData.collections;
+            if (!data || data.length < 2) {
+                showError('صيغة الملف غير صحيحة');
+                return;
+            }
+
+            const sapCodeIndex = 0;
+            const customerNameIndex = 1;
+            const mobileIndex = 2;     // Mobile Phone
+            const territoryIndex = 3;  // Territory (was wrongly 2)
+            const lineIndex = 2;       // لا يوجد عمود "خط" حقيقي في الملف، بنعرض رقم الموبايل بدل ذلك
+            const collectorIndex = 5;  // المحصل (was wrongly 4, which was actually عمود "مراجعه تحصيل")
+
+            const headerRowIndex = (excelData && typeof excelData.headerRowIndex === 'number') ? excelData.headerRowIndex : 0;
+
+            allCustomers.clear();
+            
+            for (let i = headerRowIndex + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 2) continue;
+                
+                const sapCode = String(row[sapCodeIndex]).trim();
+                const customerName = String(row[customerNameIndex]).trim();
+                const territory = row[territoryIndex] ? String(row[territoryIndex]).trim() : 'N/A';
+                const line = row[lineIndex] ? String(row[lineIndex]).trim() : 'N/A';
+                const collector = row[collectorIndex] ? String(row[collectorIndex]).trim() : 'N/A';
+
+                if (sapCode && customerName && !sapCode.includes('Code') && 
+                    !sapCode.includes('SAP') && !allCustomers.has(sapCode) && 
+                    sapCode !== '' && customerName !== '') {
+                    allCustomers.set(sapCode, {
+                        name: customerName,
+                        territory: territory,
+                        line: line,
+                        collector: collector,
+                        rawData: row
+                    });
+                }
+            }
+
+            if (allCustomers.size === 0) {
+                showError('لم يتم العثور على بيانات عملاء صالحة');
+                return;
+            }
+
+            populateCustomerSelect();
+            document.getElementById('customerSection').style.display = 'block';
+            document.getElementById('salesSection').style.display = 'block';
+            showSuccess(`✅ تم تحميل ${allCustomers.size} عميل`);
+        }
+
+        function populateCustomerSelect(filteredCustomers = null) {
+            const select = document.getElementById('customerSelect');
+            select.innerHTML = '<option value="">-- اختر عميلاً --</option>';
+            
+            const customersToShow = filteredCustomers || allCustomers;
+            
+            customersToShow.forEach((customerData, code) => {
+                const option = document.createElement('option');
+                option.value = code;
+                const displayText = `${customerData.name} (${code})`;
+                if (customerData.territory && customerData.territory !== 'N/A') {
+                    option.textContent = `${displayText} - ${customerData.territory}`;
+                } else {
+                    option.textContent = displayText;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        function handleSearchCustomer(e) {
+            const searchText = e.target.value.toLowerCase().trim();
+            
+            if (searchText === '') {
+                // Show all customers if search is empty
+                populateCustomerSelect(allCustomers);
+                document.getElementById('customerSelect').value = '';
+                document.getElementById('customerInfo').classList.remove('show');
+                document.getElementById('periodSection').style.display = 'none';
+                document.getElementById('buttonGroup').style.display = 'none';
+                document.getElementById('statementButtonGroup').style.display = 'none';
+                selectedCustomer = null;
+                return;
+            }
+
+            // Filter customers by SAP code or name
+            const filtered = new Map();
+            allCustomers.forEach((customerData, code) => {
+                const codeMatch = code.toLowerCase().includes(searchText);
+                const nameMatch = customerData.name.toLowerCase().includes(searchText);
+                const territoryMatch = customerData.territory.toLowerCase().includes(searchText);
+                
+                if (codeMatch || nameMatch || territoryMatch) {
+                    filtered.set(code, customerData);
+                }
+            });
+
+            populateCustomerSelect(filtered);
+
+            // If only one result, auto-select it
+            if (filtered.size === 1) {
+                const [code] = filtered;
+                document.getElementById('customerSelect').value = code;
+                selectCustomer(code);
+            }
+        }
+
+        function handleCustomerChange(e) {
+            const sapCode = e.target.value;
+            if (!sapCode) {
+                document.getElementById('customerInfo').classList.remove('show');
+                document.getElementById('periodSection').style.display = 'none';
+                document.getElementById('buttonGroup').style.display = 'none';
+                document.getElementById('statementButtonGroup').style.display = 'none';
+                document.getElementById('searchCustomer').value = '';
+                selectedCustomer = null;
+                return;
+            }
+
+            selectCustomer(sapCode);
+        }
+
+        function selectCustomer(sapCode) {
+            const customerData = allCustomers.get(sapCode);
+            
+            if (customerData) {
+                selectedCustomer = {
+                    sapCode: sapCode,
+                    name: customerData.name,
+                    territory: customerData.territory,
+                    line: customerData.line,
+                    collector: customerData.collector,
+                    rawData: customerData.rawData
+                };
+
+                document.getElementById('customerSAB').textContent = selectedCustomer.sapCode;
+                document.getElementById('customerName').textContent = selectedCustomer.name;
+                document.getElementById('customerTerritory').textContent = selectedCustomer.territory;
+                document.getElementById('customerCollector').textContent = selectedCustomer.collector;
+                
+                let total = 0;
+                let collectionCount = 0;
+
+                // حساب المجموع وعدد التحصيلات - بنمر بس على أعمدة التواريخ الحقيقية
+                const headerRowIndex = (excelData && typeof excelData.headerRowIndex === 'number') ? excelData.headerRowIndex : 0;
+                const headerRowForTotal = excelData.collections[headerRowIndex];
+                for (let i = 0; i < customerData.rawData.length; i++) {
+                    if (!excelDateToISO(headerRowForTotal[i])) continue; // تجاهل أي عمود مش تاريخ (زي عمود اجمالي التحصيل)
+                    const val = parseAmount(customerData.rawData[i]);
+                    if (!isNaN(val) && val > 0) {
+                        total += val;
+                        collectionCount++;
+                    }
+                }
+                
+                document.getElementById('customerTotal').textContent = total.toFixed(2) + ' EGP (' + collectionCount + ' تحصيل)';
+                
+                document.getElementById('customerInfo').classList.add('show');
+                document.getElementById('periodSection').style.display = 'block';
+                document.getElementById('buttonGroup').style.display = 'grid';
+                document.getElementById('statementButtonGroup').style.display = 'grid';
+
+                updateStats();
+            }
+        }
+
+        // تحويل قيمة المبلغ (قد تكون رقم أو نص فيه فواصل آلاف) إلى رقم صحيح
+        function parseAmount(cell) {
+            if (typeof cell === 'number') return cell;
+            if (typeof cell === 'string') {
+                const cleaned = cell.replace(/[,\s]/g, '');
+                return parseFloat(cleaned);
+            }
+            return NaN;
+        }
+
+        // تحويل أي شكل من أشكال التاريخ (خلية تاريخ حقيقية / رقم تسلسلي إكسل / نص) إلى صيغة YYYY-MM-DD
+        function excelDateToISO(cell) {
+            if (cell === null || cell === undefined || cell === '') return null;
+
+            // خلية Date حقيقية (تحدث مع cellDates:true عند وجود تنسيق تاريخ فعلي)
+            if (cell instanceof Date && !isNaN(cell.getTime())) {
+                const y = cell.getFullYear();
+                const m = String(cell.getMonth() + 1).padStart(2, '0');
+                const d = String(cell.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            // رقم تسلسلي من إكسل (مثال: 45879)
+            if (typeof cell === 'number' && isFinite(cell)) {
+                const utcDays = Math.floor(cell - 25569);
+                const date = new Date(utcDays * 86400 * 1000);
+                if (isNaN(date.getTime())) return null;
+                const y = date.getUTCFullYear();
+                const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(date.getUTCDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            if (typeof cell === 'string') {
+                const s = cell.trim();
+                if (!s) return null;
+
+                // YYYY-MM-DD أو YYYY/MM/DD
+                let m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                if (m) {
+                    return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+                }
+
+                // DD-MM-YYYY أو DD/MM/YYYY (الصيغة الشائعة في مصر)
+                m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (m) {
+                    const day = String(m[1]).padStart(2, '0');
+                    const month = String(m[2]).padStart(2, '0');
+                    return `${m[3]}-${month}-${day}`;
+                }
+
+                // محاولة أخيرة بالمحلل الافتراضي للمتصفح
+                const nd = new Date(s);
+                if (!isNaN(nd.getTime())) {
+                    const y = nd.getFullYear();
+                    const mo = String(nd.getMonth() + 1).padStart(2, '0');
+                    const d = String(nd.getDate()).padStart(2, '0');
+                    return `${y}-${mo}-${d}`;
+                }
+            }
+
+            return null;
+        }
+
+        // يحدد رقم صف العناوين (Headers) تلقائيًا بدل افتراض إنه أول صف (data[0])
+        // في هذا الملف صف 1 فاضي والعناوين الحقيقية في صف 2 (data[1])
+        function findHeaderRowIndex(rows) {
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                const row = rows[i];
+                if (!row) continue;
+                for (const cell of row) {
+                    if (typeof cell === 'string' && (cell.includes('SAP') || cell.includes('Code'))) {
+                        return i;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        // يحدد أول عمود فيه تاريخ فعلي (بدل افتراض إنه العمود رقم 4)
+        function findDateStartIndex(headerRow) {
+            if (!headerRow) return -1;
+            for (let i = 0; i < headerRow.length; i++) {
+                if (excelDateToISO(headerRow[i])) return i;
+            }
+            return -1;
+        }
+
+        // يحدد نطاق التاريخ الفعلي للتقرير:
+        // - لو مفيش تاريخ بداية ولا نهاية: الفترة كاملة
+        // - لو فيه تاريخ بداية بس وبدون نهاية: من البداية لحد النهاردة
+        function getEffectiveDateRange() {
+            const startDate = document.getElementById('startDate').value;
+            let endDate = document.getElementById('endDate').value;
+            if (startDate && !endDate) {
+                endDate = new Date().toISOString().split('T')[0];
+            }
+            return { startDate, endDate };
+        }
+
+        function updateStats() {
+            if (!selectedCustomer) return;
+
+            const { startDate, endDate } = getEffectiveDateRange();
+            const data = excelData.collections;
+            const headerRowIndex = (typeof excelData.headerRowIndex === 'number') ? excelData.headerRowIndex : 0;
+            const headerRow = data[headerRowIndex]; // الصف اللي فيه التواريخ فعلاً (مش الصف الفاضي data[0])
+            const customerRow = selectedCustomer.rawData;
+
+            let totalInPeriod = 0;
+            let collectionsCount = 0;
+
+            for (let i = 0; i < headerRow.length; i++) {
+                const dateCell = headerRow[i];
+                if (dateCell === null || dateCell === undefined || dateCell === '') continue;
+
+                const dateStr = excelDateToISO(dateCell);
+                if (!dateStr) continue;
+
+                if ((!startDate || dateStr >= startDate) && (!endDate || dateStr <= endDate)) {
+                    const value = parseAmount(customerRow[i]);
+                    if (!isNaN(value) && value > 0) {
+                        totalInPeriod += value;
+                        collectionsCount++;
+                    }
+                }
+            }
+
+            const average = collectionsCount > 0 ? (totalInPeriod / collectionsCount).toFixed(2) : 0;
+
+            const statsHtml = `
+                <div class="stat-card">
+                    <h3>إجمالي التحصيل</h3>
+                    <p>${totalInPeriod.toFixed(2)} EGP</p>
+                </div>
+                <div class="stat-card">
+                    <h3>عدد التحصيلات</h3>
+                    <p>${collectionsCount}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>المتوسط اليومي</h3>
+                    <p>${average} EGP</p>
+                </div>
+            `;
+            
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+
+        // بيرجع تفاصيل التحصيلات لعميل معين في فترة معينة (نفس منطق generateReportContent بس كدالة منفصلة لإعادة الاستخدام في كشف الحساب)
+        function getCustomerCollectionsForStatement(startDate, endDate) {
+            const data = excelData.collections;
+            const headerRowIndex = (typeof excelData.headerRowIndex === 'number') ? excelData.headerRowIndex : 0;
+            const headerRow = data[headerRowIndex];
+            const customerRow = selectedCustomer.rawData;
+            let collections = [];
+
+            for (let i = 0; i < headerRow.length; i++) {
+                const dateCell = headerRow[i];
+                if (dateCell === null || dateCell === undefined || dateCell === '') continue;
+                const dateStr = excelDateToISO(dateCell);
+                if (!dateStr) continue;
+
+                const value = parseAmount(customerRow[i]);
+                if (!isNaN(value) && value > 0) {
+                    if ((!startDate || dateStr >= startDate) && (!endDate || dateStr <= endDate)) {
+                        collections.push({ date: dateStr, value: value });
+                    }
+                }
+            }
+            collections.sort((a, b) => new Date(a.date) - new Date(b.date));
+            return collections;
+        }
+
+        // بيجمع فواتير البيع الخاصة بالعميل من ملف المبيعات (لو اتحمل)، مجمّعة حسب رقم الفاتورة/الطلب (OrderID)
+        function getCustomerInvoices(sapCode, startDate, endDate) {
+            if (!salesData || !salesData.rows) return [];
+            const { orderId, customerNo, actualDeliveryDate, qty, lineTotal } = salesData.col;
+            if (orderId === -1 || customerNo === -1) return [];
+
+            const grouped = new Map();
+            for (const row of salesData.rows) {
+                if (!row) continue;
+                const rowCustomerNo = String(row[customerNo]).trim();
+                if (rowCustomerNo !== String(sapCode).trim()) continue;
+
+                const dateStr = excelDateToISO(row[actualDeliveryDate]);
+                if (!dateStr) continue;
+                if ((startDate && dateStr < startDate) || (endDate && dateStr > endDate)) continue;
+
+                const invoiceNo = String(row[orderId]);
+                if (!grouped.has(invoiceNo)) {
+                    grouped.set(invoiceNo, { invoiceNo: invoiceNo, date: dateStr, qty: 0, value: 0 });
+                }
+                const g = grouped.get(invoiceNo);
+                const qtyVal = typeof row[qty] === 'number' ? row[qty] : parseAmount(row[qty]);
+                const totalVal = typeof row[lineTotal] === 'number' ? row[lineTotal] : parseAmount(row[lineTotal]);
+                if (!isNaN(qtyVal)) g.qty += qtyVal;
+                if (!isNaN(totalVal)) g.value += totalVal;
+            }
+
+            return Array.from(grouped.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
+        // بيدور على "صافي المديونيه" للعميل في الشيت المناسب (مباشر / غير مباشر) حسب الـ Territory بتاعه
+        function getCustomerDebtSummary(sapCode) {
+            if (!excelData || !excelData.workbook || typeof XLSX === 'undefined') return null;
+
+            const isIndirect = selectedCustomer.territory === 'غير مباشر';
+            const sheetName = isIndirect ? 'مديونيه غير مباشر' : 'مديونيه المباشر';
+            const sheet = excelData.workbook.Sheets[sheetName];
+            if (!sheet) return null;
+
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            let headerRowIdx = -1, netDebtCol = -1, customerCol = -1;
+            for (let i = 0; i < Math.min(rows.length, 15); i++) {
+                const row = rows[i];
+                if (!row) continue;
+                const idx = row.findIndex(c => typeof c === 'string' && c.trim() === 'صافي المديونيه');
+                if (idx !== -1) {
+                    headerRowIdx = i;
+                    netDebtCol = idx;
+                    customerCol = row.findIndex(c => typeof c === 'string' && (c.includes('رقم العميل') || c.trim() === 'NO'));
+                    break;
+                }
+            }
+            if (headerRowIdx === -1 || customerCol === -1) return null;
+
+            for (let i = headerRowIdx + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row) continue;
+                if (String(row[customerCol]).trim() === String(sapCode).trim()) {
+                    const netDebtVal = typeof row[netDebtCol] === 'number' ? row[netDebtCol] : parseAmount(row[netDebtCol]);
+                    return { netDebt: isNaN(netDebtVal) ? 0 : netDebtVal, sheetName: sheetName };
+                }
+            }
+            return null;
+        }
+
+        function generateReportContent() {
+            const { startDate, endDate } = getEffectiveDateRange();
+            const data = excelData.collections;
+            const headerRowIndex = (typeof excelData.headerRowIndex === 'number') ? excelData.headerRowIndex : 0;
+            const headerRow = data[headerRowIndex]; // الصف اللي فيه التواريخ فعلاً (مش الصف الفاضي data[0])
+            const customerRow = selectedCustomer.rawData;
+
+            let collections = [];
+
+            // جمع جميع التحصيلات
+            for (let i = 0; i < headerRow.length; i++) {
+                const dateCell = headerRow[i];
+                if (dateCell === null || dateCell === undefined || dateCell === '') continue;
+
+                const dateStr = excelDateToISO(dateCell);
+                if (!dateStr) continue;
+
+                const value = parseAmount(customerRow[i]);
+
+                // إضافة التحصيل إذا كان قيمة صحيحة وموجبة
+                if (!isNaN(value) && value > 0) {
+                    // تطبيق فلتر التواريخ
+                    if ((!startDate || dateStr >= startDate) && (!endDate || dateStr <= endDate)) {
+                        collections.push({ date: dateStr, value: value, rawValue: value });
+                    }
+                }
+            }
+
+            // ترتيب التحصيلات حسب التاريخ (من الأقدم للأحدث)
+            collections.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const totalCollection = collections.reduce((sum, col) => sum + col.value, 0);
+            const currentDate = new Date().toLocaleDateString('en-US');
+
+            let html = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; direction: rtl; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { margin: 0 0 5px 0; color: #667eea; font-size: 24px; }
+        .header p { margin: 5px 0; color: #666; }
+        .report-info-box { background: #f0f4ff; padding: 15px; border-radius: 5px; border-right: 4px solid #667eea; margin-bottom: 30px; }
+        .report-info-box p { margin: 5px 0; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: #e8f5e9; padding: 15px; border-radius: 5px; text-align: center; border-top: 3px solid #4CAF50; }
+        .stat-card p { margin: 0; font-size: 20px; font-weight: bold; color: #2e7d32; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: #667eea; color: white; padding: 12px; text-align: right; border: 1px solid #ddd; }
+        td { padding: 12px; text-align: right; border: 1px solid #ddd; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        tfoot { background: #667eea; color: white; font-weight: bold; }
+        .footer { border-top: 2px solid #e0e0e0; padding-top: 20px; text-align: center; color: #999; font-size: 12px; }
+        @media print { body { background: white; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>YG Company</h1>
+            <p>The Coca-Cola Bottling Companies</p>
+            <p style="font-size: 14px; margin-top: 10px;">تقرير التحصيلات اليومية</p>
+        </div>
+
+        <div class="report-info-box">
+            <p><strong>اسم العميل:</strong> ${selectedCustomer.name}</p>
+            <p><strong>رقم SAP:</strong> ${selectedCustomer.sapCode}</p>
+            <p><strong>Territory/المنطقة:</strong> <span style="color: #4CAF50; font-weight: bold;">${selectedCustomer.territory}</span></p>
+            <p><strong>المحصل:</strong> ${selectedCustomer.collector}</p>
+            <p><strong>تاريخ التقرير:</strong> ${currentDate}</p>
+            <p><strong>الفترة:</strong> من ${startDate || 'البداية'} إلى ${endDate || 'النهاية'}</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <p style="color: #666; font-size: 12px; margin-bottom: 5px;">إجمالي التحصيل</p>
+                <p>${totalCollection.toFixed(2)} EGP</p>
+            </div>
+            <div class="stat-card" style="background: #e3f2fd; border-top-color: #2196F3;">
+                <p style="color: #666; font-size: 12px; margin-bottom: 5px;">عدد التحصيلات</p>
+                <p style="color: #1565c0;">${collections.length}</p>
+            </div>
+            <div class="stat-card" style="background: #fff3e0; border-top-color: #FF9800;">
+                <p style="color: #666; font-size: 12px; margin-bottom: 5px;">المتوسط اليومي</p>
+                <p style="color: #e65100;">${(totalCollection / (collections.length || 1)).toFixed(2)} EGP</p>
+            </div>
+        </div>
+
+        <h2 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 20px;">تفاصيل التحصيلات (${collections.length} تحصيل)</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50%;">التاريخ</th>
+                    <th style="width: 50%;">المبلغ (EGP)</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+            // إضافة جميع الصفوف
+            collections.forEach((col, index) => {
+                const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+                html += `
+                <tr style="background-color: ${bgColor};">
+                    <td style="font-weight: 500;">${col.date}</td>
+                    <td style="font-weight: bold; color: #2e7d32; text-align: center;">${col.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>`;
+            });
+
+            html += `
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td style="font-weight: bold;">الإجمالي</td>
+                    <td style="font-weight: bold; text-align: center; color: #2e7d32;">${totalCollection.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer">
+            <p>تم إنشاء هذا التقرير من قبل نظام إدارة التحصيلات</p>
+            <p>${new Date().toLocaleString('en-US')}</p>
+        </div>
+    </div>
+</body>
+</html>
+            `;
+
+            return html;
+        }
+
+        // تاريخ بداية الفترة الأساسية اللي عمود "رصيد أول المدة" (عمود G) محسوب عليه في ملف الإكسل
+        const BASE_STATEMENT_DATE = '2026-01-01';
+
+        // بيبني تقرير "كشف حساب" الكامل: فواتير بيع + تحصيل + رصيد افتتاحي + صافي المديونية
+        function generateStatementContent() {
+            const { startDate, endDate } = getEffectiveDateRange();
+            const currentDate = new Date().toLocaleDateString('en-US');
+
+            const invoices = getCustomerInvoices(selectedCustomer.sapCode, startDate, endDate);
+            const collections = getCustomerCollectionsForStatement(startDate, endDate);
+            const debtSummary = getCustomerDebtSummary(selectedCustomer.sapCode);
+
+            // عمود G (رصيد اول المده) في شيت اساس التحصيل - رقمه ثابت في بنية الملف
+            // وده رصيد بداية الفترة الأساسية (1-1-2026) مش رصيد بداية أي فترة يختارها المستخدم
+            // ملحوظة مهمة: في الشيت، القيمة السالبة تعني إن دي كانت مديونية على العميل،
+            // والقيمة الموجبة تعني إن ده كان رصيد له. عشان كده بنعكس الإشارة هنا
+            // عشان تتوافق مع باقي المعادلات في التطبيق اللي بتعتبر الموجب = مديونية والسالب = رصيد للعميل
+            const openingBalanceColIndex = 6;
+            const openingBalanceRaw = parseAmount(selectedCustomer.rawData[openingBalanceColIndex]);
+            const baseOpeningBalance = isNaN(openingBalanceRaw) ? 0 : -openingBalanceRaw;
+
+            // لو المستخدم اختار تاريخ بداية بعد 1-1-2026، لازم نحسب كل حركات
+            // الفواتير والتحصيل من 1-1-2026 لحد يوم قبل تاريخ بداية التقرير المختار
+            // ونضيفها/نطرحها من الرصيد الأساسي، عشان "رصيد أول المدة" يبقى مظبوط
+            // لبداية الفترة المختارة، مش رصيد 1-1-2026 نفسه
+            let openingBalance = baseOpeningBalance;
+            if (startDate && startDate > BASE_STATEMENT_DATE) {
+                const dayBeforeStart = new Date(startDate);
+                dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
+                const priorEndDate = dayBeforeStart.toISOString().split('T')[0];
+
+                const priorInvoices = getCustomerInvoices(selectedCustomer.sapCode, BASE_STATEMENT_DATE, priorEndDate);
+                const priorCollections = getCustomerCollectionsForStatement(BASE_STATEMENT_DATE, priorEndDate);
+
+                const priorInvoicesTotal = priorInvoices.reduce((sum, inv) => sum + inv.value, 0);
+                const priorCollectionsTotal = priorCollections.reduce((sum, col) => sum + col.value, 0);
+
+                openingBalance = baseOpeningBalance + priorInvoicesTotal - priorCollectionsTotal;
+            }
+
+            const totalInvoices = invoices.reduce((sum, inv) => sum + inv.value, 0);
+            const totalCollections = collections.reduce((sum, col) => sum + col.value, 0);
+
+            // بندمج الفواتير والتحصيلات في قائمة واحدة، مرتبة حسب التاريخ تصاعديًا
+            // ولو فاتورة وتحصيل في نفس التاريخ، الفاتورة تتحط الأول وبعدها التحصيل
+            let transactions = [];
+            invoices.forEach(inv => transactions.push({
+                date: inv.date,
+                type: 'invoice',
+                label: inv.invoiceNo,
+                qty: inv.qty,
+                amount: inv.value
+            }));
+            collections.forEach(col => transactions.push({
+                date: col.date,
+                type: 'collection',
+                label: 'تحصيل',
+                qty: null,
+                amount: -col.value
+            }));
+
+            transactions.sort((a, b) => {
+                const diff = new Date(a.date) - new Date(b.date);
+                if (diff !== 0) return diff;
+                if (a.type === b.type) return 0;
+                return a.type === 'invoice' ? -1 : 1;
+            });
+
+            // صافي المديونية بيتحدث مع كل عملية، ابتداءً من رصيد أول المدة
+            let runningBalance = openingBalance;
+            transactions = transactions.map(t => {
+                runningBalance += t.amount;
+                return { ...t, balance: runningBalance };
+            });
+            const finalBalance = runningBalance;
+
+            let tableRows = `
+                <tr style="background:#ede7f6; font-weight:bold;">
+                    <td>${startDate || '-'}</td>
+                    <td>مديونية العميل</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td style="color:#5e35b1;">${openingBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>`;
+            transactions.forEach(t => {
+                const isInvoice = t.type === 'invoice';
+                const amountDisplay = isInvoice
+                    ? t.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                    : ('-' + Math.abs(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                tableRows += `
+                <tr${isInvoice ? '' : ' style="background:#fdf0f0;"'}>
+                    <td>${t.date}</td>
+                    <td>${t.label}</td>
+                    <td>${isInvoice ? t.qty.toLocaleString('en-US') : ''}</td>
+                    <td style="color:${isInvoice ? '#2e7d32' : '#c62828'}; font-weight:bold;">${amountDisplay}</td>
+                    <td style="font-weight:bold;">${t.balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                </tr>`;
+            });
+
+            const invoicesNote = salesData ? '' : '<p style="color:#c62828; font-size:12px; margin:4px 0 0 0;">⚠️ لم يتم رفع ملف المبيعات - قسم فواتير البيع هيفضل فاضي</p>';
+            const debtNote = debtSummary ? '' : '<p style="color:#c62828; font-size:12px; margin:4px 0 0 0;">⚠️ لم يتم العثور على العميل في شيت المديونية المطابق (مباشر/غير مباشر)</p>';
+
+            let html = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', Arial, sans-serif; color: #333; direction: rtl; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 15px; margin-bottom: 20px; }
+        .header img { max-width: 150px; margin-bottom: 10px; }
+        .header h1 { margin: 5px 0; color: #667eea; font-size: 22px; }
+        .header p { margin: 3px 0; color: #666; }
+
+        .statement-info-box {
+            background: linear-gradient(135deg, #f0f4ff 0%, #f7f9ff 100%);
+            padding: 20px 24px;
+            border-radius: 10px;
+            border-right: 5px solid #667eea;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 24px;
+        }
+        .info-field {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #d7deef;
+        }
+        .info-field .icon { font-size: 15px; }
+        .info-field .label { font-size: 12px; color: #666; font-weight: 600; white-space: nowrap; }
+        .info-field .value { font-size: 14.5px; color: #22283a; font-weight: 700; }
+        .info-field.full { grid-column: 1 / -1; }
+        .info-field .value.highlight { color: #4CAF50; }
+        .info-divider { grid-column: 1 / -1; border: none; border-top: 1px solid #d7deef; margin: 2px 0; }
+
+        .summary { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .summary-card { padding: 12px; border-radius: 5px; text-align: center; }
+        .summary-card p.label { margin: 0 0 5px 0; font-size: 12px; color: #666; }
+        .summary-card p.value { margin: 0; font-size: 15px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+        th { background: #667eea; color: white; padding: 8px; text-align: center; border: 1px solid #ddd; }
+        td { padding: 8px; text-align: center; border: 1px solid #ddd; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .footer { border-top: 2px solid #e0e0e0; padding-top: 15px; text-align: center; color: #999; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${LOGO_BASE64}" alt="YG Company" />
+            <h1>YG Company</h1>
+            <p>The Coca-Cola Bottling Companies</p>
+            <p style="font-size: 14px; margin-top: 8px;">كشف حساب العميل</p>
+        </div>
+
+        <div class="statement-info-box">
+            <div class="info-grid">
+                <div class="info-field">
+                    <span class="icon">👤</span>
+                    <span class="label">اسم العميل:</span>
+                    <span class="value">${selectedCustomer.name}</span>
+                </div>
+                <div class="info-field">
+                    <span class="icon">🏷️</span>
+                    <span class="label">رقم SAP:</span>
+                    <span class="value">${selectedCustomer.sapCode}</span>
+                </div>
+                <div class="info-field">
+                    <span class="icon">📍</span>
+                    <span class="label">المنطقة:</span>
+                    <span class="value highlight">${selectedCustomer.territory}</span>
+                </div>
+                <div class="info-field">
+                    <span class="icon">🧑‍💼</span>
+                    <span class="label">المحصل:</span>
+                    <span class="value">${selectedCustomer.collector}</span>
+                </div>
+                <hr class="info-divider">
+                <div class="info-field full">
+                    <span class="icon">📅</span>
+                    <span class="label">تاريخ التقرير:</span>
+                    <span class="value">${currentDate}</span>
+                </div>
+                <div class="info-field full">
+                    <span class="icon">🗓️</span>
+                    <span class="label">الفترة:</span>
+                    <span class="value">من ${startDate || 'البداية'} إلى ${endDate || 'النهاية'}</span>
+                </div>
+            </div>
+            ${invoicesNote}
+            ${debtNote}
+        </div>
+
+        <div class="summary">
+            <div class="summary-card" style="background: #ede7f6;">
+                <p class="label">مديونية العميل</p>
+                <p class="value" style="color: #5e35b1;">${openingBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            </div>
+            <div class="summary-card" style="background: #ffebee;">
+                <p class="label">إجمالي فواتير البيع</p>
+                <p class="value" style="color: #2e7d32;">${totalInvoices.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            </div>
+            <div class="summary-card" style="background: #e8f5e9;">
+                <p class="label">إجمالي التحصيل</p>
+                <p class="value" style="color: #c62828;">-${totalCollections.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            </div>
+            <div class="summary-card" style="background: #fff3e0;">
+                <p class="label">صافي المديونية الحالي</p>
+                <p class="value" style="color: #e65100;">${(debtSummary ? debtSummary.netDebt : finalBalance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>البيان / رقم الفاتورة</th>
+                    <th>الكمية</th>
+                    <th>القيمة (EGP)</th>
+                    <th>صافي المديونية (EGP)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows || '<tr><td colspan="5">لا توجد بيانات في هذه الفترة</td></tr>'}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>تم إنشاء هذا التقرير من قبل نظام إدارة التحصيلات - YG Company</p>
+            <p>${new Date().toLocaleString('en-US')}</p>
+        </div>
+    </div>
+</body>
+</html>
+            `;
+
+            return html;
+        }
+
+        function previewReport() {
+            const html = generateReportContent();
+            document.getElementById('pdfContent').innerHTML = html;
+            document.getElementById('pdfPreview').classList.add('show');
+            showSuccess('✅ تم تحديث معاينة التقرير');
+            window.scrollTo(0, document.getElementById('pdfPreview').offsetTop - 100);
+        }
+
+        function previewStatement() {
+            const html = generateStatementContent();
+            document.getElementById('pdfContent').innerHTML = html;
+            document.getElementById('pdfPreview').classList.add('show');
+            showSuccess('✅ تم تحديث معاينة كشف الحساب');
+            window.scrollTo(0, document.getElementById('pdfPreview').offsetTop - 100);
+        }
+
+        async function downloadPdfReport() {
+            const html = generateReportContent();
+            await renderHtmlToPdf(html, `تقرير_${selectedCustomer.name}_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        async function downloadStatementPdf() {
+            const html = generateStatementContent();
+            await renderHtmlToPdf(html, `كشف_حساب_${selectedCustomer.name}_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        // بنستخدم html2canvas و jsPDF مباشرة (من غير wrapper html2pdf.js اللي كان بيفشل بصمت)
+        // وده بينزل الملف تلقائي من أول ضغطة، وبيقسم المحتوى على أكتر من صفحة لو طويل
+        async function renderHtmlToPdf(html, filename) {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                showError('❌ مكتبات إنشاء PDF لم تُحمّل بعد. تأكد من اتصال الإنترنت وحاول تاني.');
+                return;
+            }
+
+            const container = document.createElement('div');
+            container.innerHTML = html;
+
+            // بنضيف العنصر فعليًا للصفحة (برّه الشاشة) عشان html2canvas يقدر يصوره
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '-99999px';
+            container.style.width = '800px';
+            container.style.background = '#ffffff';
+            document.body.appendChild(container);
+
+            try {
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidthMM = pdf.internal.pageSize.getWidth();
+                const pageHeightMM = pdf.internal.pageSize.getHeight();
+                const pxPerMM = canvas.width / pageWidthMM;
+                const pageHeightPx = Math.floor(pageHeightMM * pxPerMM);
+
+                let renderedPx = 0;
+                let isFirstPage = true;
+
+                while (renderedPx < canvas.height) {
+                    const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = canvas.width;
+                    pageCanvas.height = sliceHeightPx;
+                    pageCanvas.getContext('2d').drawImage(
+                        canvas,
+                        0, renderedPx, canvas.width, sliceHeightPx,
+                        0, 0, canvas.width, sliceHeightPx
+                    );
+
+                    const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                    const sliceHeightMM = sliceHeightPx / pxPerMM;
+
+                    if (!isFirstPage) pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pageWidthMM, sliceHeightMM);
+
+                    renderedPx += sliceHeightPx;
+                    isFirstPage = false;
+                }
+
+                pdf.save(filename);
+                showSuccess('✅ تم تنزيل الملف بنجاح!');
+            } catch (error) {
+                showError('❌ خطأ في إنشاء PDF: ' + error.message);
+            } finally {
+                document.body.removeChild(container);
+            }
+        }
+
+        // Initialize
+        showInfo('👋 مرحباً! ابدأ برفع ملف المديونية (.xlsx)');
+    </script>
+</body>
+</html>
