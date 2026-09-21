@@ -524,6 +524,19 @@
   .aging-download-btn:hover{opacity:0.85;}
   .aging-download-btn.btn-15{border-color:var(--collected); color:var(--collected);}
   .aging-download-btn.btn-21{border-color:var(--debt); color:var(--debt);}
+  .all-lines-export-row{margin-top:14px; padding-top:14px; border-top:1px solid var(--hairline); display:flex; justify-content:flex-start;}
+  .all-lines-download-btn{
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    padding:9px 18px;
+    border-radius:6px;
+    border:1.5px solid var(--brand-red);
+    background:var(--brand-red);
+    color:#FFFFFF;
+    cursor:pointer;
+  }
+  .all-lines-download-btn:hover{opacity:0.9;}
   .overlay-bar-track{
     position:relative;
     height:14px;
@@ -830,6 +843,10 @@
     </div>
 
     <div class="chart-box" id="overdueChartBox"></div>
+
+    <div class="all-lines-export-row">
+      <button class="all-lines-download-btn" id="downloadAllLinesBtn">⬇ تحميل كل الفواتير المتجاوزة (فوق 15 يوم) — كل الخطوط</button>
+    </div>
 
     <div class="mini-note" id="agingNote" style="display:none;"></div>
   </section>
@@ -1424,6 +1441,69 @@ document.getElementById('overdueChartBox').addEventListener('click', (e)=>{
   if (!btn) return;
   exportOverdueInvoices(btn.dataset.line, parseInt(btn.dataset.threshold, 10));
 });
+
+// Exports every individual overdue invoice (>15 days) across all lines
+// currently in view — same columns as the per-line download, just not
+// scoped to one line, for a single all-in-one collectors' worksheet.
+function exportAllOverdueInvoices(){
+  const rows = (state.invoiceRows||[]).filter(r =>
+    (lineFilter==='ALL' || r.line===lineFilter) &&
+    (collectorFilter==='ALL' || r.collector===collectorFilter) &&
+    r.days > 15
+  );
+  if (rows.length === 0){
+    alert('لا توجد فواتير متجاوزة 15 يوم لعرضها بالفلاتر الحالية.');
+    return;
+  }
+  const byInvoice = {};
+  for (const r of rows){
+    const groupKey = r.invoiceNo + '||' + r.line + '||' + r.collector;
+    if (!byInvoice[groupKey]){
+      byInvoice[groupKey] = {invoiceNo:r.invoiceNo, custCode:r.custCode, custName:r.custName, line:r.line, collector:r.collector, invoiceDate:r.invoiceDate, qty:0, grossAmount:0, paidAmount:0, amount:0, days:0};
+    }
+    const g = byInvoice[groupKey];
+    g.qty += r.qty;
+    g.grossAmount += r.grossAmount||0;
+    g.paidAmount += r.paidAmount||0;
+    g.amount += r.amount;
+    g.days = Math.max(g.days, r.days);
+    if (!g.invoiceDate && r.invoiceDate) g.invoiceDate = r.invoiceDate;
+  }
+  const aggRows = Object.values(byInvoice).sort((a,b)=>b.amount-a.amount);
+
+  const sheetData = aggRows.map(r=>({
+    'رقم الفاتورة': r.invoiceNo,
+    'تاريخ الفاتورة': r.invoiceDate || '',
+    'اسم العميل': r.custName,
+    'رقم العميل': r.custCode,
+    'اسم الخط': r.line,
+    'اسم المحصل': r.collector,
+    'كمية الفاتورة': Math.round(r.qty*100)/100,
+    'اجمالي قيمة الفاتورة': Math.round(r.grossAmount*100)/100,
+    'المدفوع من الفاتورة': Math.round(r.paidAmount*100)/100,
+    'المتبقي (غير مسدد)': Math.round(r.amount*100)/100,
+    'أيام التجاوز': r.days
+  }));
+
+  const totalGross = aggRows.reduce((s,r)=>s+r.grossAmount, 0);
+  const totalPaid = aggRows.reduce((s,r)=>s+r.paidAmount, 0);
+  const totalRemaining = aggRows.reduce((s,r)=>s+r.amount, 0);
+  sheetData.push({
+    'رقم الفاتورة': '', 'تاريخ الفاتورة': '', 'اسم العميل': '', 'رقم العميل': '', 'اسم الخط': 'الإجمالي', 'اسم المحصل': '',
+    'كمية الفاتورة': '',
+    'اجمالي قيمة الفاتورة': Math.round(totalGross*100)/100,
+    'المدفوع من الفاتورة': Math.round(totalPaid*100)/100,
+    'المتبقي (غير مسدد)': Math.round(totalRemaining*100)/100,
+    'أيام التجاوز': ''
+  });
+
+  const ws = XLSX.utils.json_to_sheet(sheetData);
+  const wbOut = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbOut, ws, 'فواتير متجاوزة كل الخطوط');
+  XLSX.writeFile(wbOut, 'فواتير متجاوزة 15 يوم - كل الخطوط.xlsx');
+}
+
+document.getElementById('downloadAllLinesBtn').addEventListener('click', exportAllOverdueInvoices);
 
 function renderCollectSalesChart(groups){
   const dp = document.getElementById('trendFrom');
